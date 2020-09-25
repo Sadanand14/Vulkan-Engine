@@ -75,6 +75,7 @@ namespace Graphics
 		CreateLogicalDevice();
 		CreateSwapChain();
 		CreateImageViews();
+		CreateRenderPass();
 		CreateGraphicsPipeline();
 		return true;
 	}
@@ -184,7 +185,7 @@ namespace Graphics
 		//get all extension data(optional)
 		uint32_t glfwExtensionCount = 0;
 		vkEnumerateInstanceExtensionProperties(nullptr, &glfwExtensionCount, nullptr);
-		//m_extensionList.reserve(glfwExtensionCount);
+		m_extensionList.reserve(glfwExtensionCount);
 		vkEnumerateInstanceExtensionProperties(nullptr, &glfwExtensionCount, m_extensionList.data());
 	}
 
@@ -527,7 +528,6 @@ namespace Graphics
 		}
 	}
 
-
 	bool VulkanProject::CheckDeviceExtensionSupport(VkPhysicalDevice device)
 	{
 		uint32_t deviceExtensionCount = 0;
@@ -620,7 +620,10 @@ namespace Graphics
 	{
 		VkShaderModuleCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+
+		
 		createInfo.codeSize = code.size();
+
 		createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
 		VkShaderModule shaderModule;
 		if (vkCreateShaderModule(m_logicalDevice, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
@@ -632,7 +635,7 @@ namespace Graphics
 	void VulkanProject::CreateGraphicsPipeline()
 	{
 		//Shader vShader = Shader("Shaders/vShader.vert", m_logicalDevice);
-		auto vertexcode = readFile("Shaders/vShader.vert");
+		auto vertexcode = readFile("Shaders/vert.spv");
 		VkShaderModule vertexModule = CreateShaderModule(vertexcode);
 		VkPipelineShaderStageCreateInfo vertStageInfo{};
 		vertStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -640,7 +643,7 @@ namespace Graphics
 		vertStageInfo.module = vertexModule;
 		vertStageInfo.pName = "main";
 
-		auto fragCode = readFile("Shaders/pShader.frag");
+		auto fragCode = readFile("Shaders/frag.spv");
 		VkShaderModule fragModule = CreateShaderModule(fragCode);
 		VkPipelineShaderStageCreateInfo fragStageInfo{};
 		fragStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -749,6 +752,31 @@ namespace Graphics
 		vkDestroyShaderModule(m_logicalDevice, vertexModule, nullptr);
 		vkDestroyShaderModule(m_logicalDevice, fragModule, nullptr);
 	}
+
+	void VulkanProject::CreateRenderPass() 
+	{
+		VkAttachmentDescription colorAttachment{};
+		colorAttachment.format = m_swapChainFormat;
+		colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+		colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+		colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+		VkAttachmentReference colorAttachmentRef {};
+		colorAttachmentRef.attachment = 0;
+		colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+		VkSubpassDescription subpass{};
+		subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+		subpass.colorAttachmentCount = 1;
+		subpass.pColorAttachments = &colorAttachmentRef;
+
+	}
+
+
 }
 
 
