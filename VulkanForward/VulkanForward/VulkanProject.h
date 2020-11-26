@@ -2,17 +2,15 @@
 
 #include "Shader.h"
 #include <GLFW/glfw3.h>
-#include <cstdint>
-
-#include <iostream>
-#include <optional>
+#include "Types.h"
 
 namespace Graphics
 {
 
 	const uint32_t Width = 1280;
 	const uint32_t Height = 720;
-			
+	const uint32_t FramesInFlight = 2;
+	
 
 	struct QueueFamilyIndices
 	{
@@ -34,6 +32,10 @@ namespace Graphics
 	class VulkanProject
 	{
 	private:
+		std::vector<VkFence> inFlightFences;
+		std::vector<VkFence> imagesInFlight;
+		size_t currentFrameIndex = 0;
+
 		GLFWwindow* m_window;
 		VkInstance m_MainInstance;
 		VkDebugUtilsMessengerEXT m_debugMessenger;
@@ -41,20 +43,26 @@ namespace Graphics
 		VkPhysicalDevice m_physicalDevice;
 		VkDevice m_logicalDevice;
 		VkSwapchainKHR m_swapChain;
-
+		std::vector<VkSemaphore> imageAvailableSemaphore, renderFinishedSemaphore;
+		
+		
 		VkQueue m_graphicsQueue;
 		VkQueue m_presentationQueue;
 		VkFormat m_swapChainFormat;
 		VkExtent2D m_swapChainExtent;
-		VkPipelineLayout m_pipelineLayout;
-		VkRenderPass m_renderPass;
+		VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
+		VkRenderPass m_traingleRenderPass = VK_NULL_HANDLE;
+		VkPipeline m_graphicsPipeline = VK_NULL_HANDLE;
+		VkCommandPool m_commandPool = VK_NULL_HANDLE;
 
+		std::vector<VkCommandBuffer> m_commandBuffers;
 		std::vector<VkImage> m_swapChainImages;
-		std::vector<VkImageView> m_swapChainImagesViews;
+		std::vector<VkImageView> m_swapChainImageViews;
 		std::vector<VkExtensionProperties> m_extensionList;
+		std::vector<VkFramebuffer> m_swapChainFrameBuffers;
 		const std::vector<const char*> m_deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 		const std::vector<const char*> m_validationLayers = { "VK_LAYER_KHRONOS_validation" };
-
+		
 #ifdef NDEBUG
 		const bool m_enablevalidationLayers = false;
 #else
@@ -79,6 +87,11 @@ namespace Graphics
 		void CreateSwapChain();
 		void CreateImageViews();
 		void CreateRenderPass();
+		void CreateFrameBuffer();
+		void CreateCommandPools();
+		void CreateCommandBuffers();
+		void DrawFrame();
+		void CreateSyncObjects();
 
 		//setup functions for graphics'
 		VkShaderModule CreateShaderModule(const std::vector<char>& code);
